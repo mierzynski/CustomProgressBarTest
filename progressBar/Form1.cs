@@ -237,23 +237,28 @@ namespace progressBar
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight); // pełna szerokość tła
+            Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight);
 
             int absPercent = Math.Abs(percent);
             int currentWidth = (int)(fullRect.Width * (absPercent / 100.0));
 
+            // Ustal kolor progressbara w zależności od wartości
+            Color barColor = percent >= 0 ? Color.SteelBlue : ColorTranslator.FromHtml("#B44646");
+
+            // 1. Tło
+            using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
+            using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
+            {
+                g.FillPath(bgBrush, backgroundPath);
+            }
+
+            // 2. Pasek postępu
             if (percent >= 0)
             {
-                using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
-                using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
-                {
-                    g.FillPath(bgBrush, backgroundPath);
-                }
-
                 if (currentWidth > 0)
                 {
                     using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
-                    using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+                    using (SolidBrush progressBrush = new SolidBrush(barColor))
                     {
                         g.FillPath(progressBrush, progressPath);
                     }
@@ -262,7 +267,7 @@ namespace progressBar
             else
             {
                 using (GraphicsPath fullProgressPath = CreateRoundedRectangle(fullRect, radius, 100, false))
-                using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+                using (SolidBrush progressBrush = new SolidBrush(barColor))
                 {
                     g.FillPath(progressBrush, fullProgressPath);
                 }
@@ -284,17 +289,21 @@ namespace progressBar
                 }
             }
 
+            // 3. Tekst na środku progressbara
             string percentText = $"{percent}%";
+
             using (StringFormat sf = new StringFormat()
             {
                 Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             })
-            using (Brush textBrush = new SolidBrush(Color.Black))
+            using (Brush textBrush = new SolidBrush(barColor)) // kolor tekstu = kolor progressbara
             {
                 g.DrawString(percentText, this.Font, textBrush, fullRect, sf);
             }
         }
+
+
 
         protected override void OnLoad(EventArgs e)
         {
