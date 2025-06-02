@@ -24,6 +24,9 @@ namespace progressBar
         private Label labelVerticalRadiusLeft;
         private Label labelDistanceToLeft;
 
+        private TextBox editBox;
+        private bool editing = false;
+
 
         public Form1()
         {
@@ -36,6 +39,7 @@ namespace progressBar
 
         private void InitializeControls()
         {
+
             Label labelHeight = new Label
             {
                 Text = $"Height: {rectHeight}",
@@ -66,7 +70,7 @@ namespace progressBar
 
             trackBarPercent = new TrackBar
             {
-                Minimum = 1,
+                Minimum = -100,
                 Maximum = 100,
                 Value = percent,
                 TickFrequency = 5,
@@ -155,12 +159,11 @@ namespace progressBar
             Controls.Add(labelDistanceToLeft);
         }
 
-        // Obsługuje zmianę wartości trackbara dla percent
         private void TrackBarPercent_Scroll(object sender, EventArgs e)
         {
             percent = trackBarPercent.Value;
             labelPercent.Text = $"Percent: {percent}%";
-            Invalidate(); // Przeładuj formularz, aby odświeżyć rysowanie
+            Invalidate();
         }
 
         // Obsługuje zmianę wartości trackbara dla radius
@@ -168,37 +171,204 @@ namespace progressBar
         {
             radius = trackBarRadius.Value;
             labelRadius.Text = $"Radius: {radius}";
-            Invalidate(); // Przeładuj formularz, aby odświeżyć rysowanie
+            Invalidate();
         }
+        //protected override void OnPaint(PaintEventArgs e)
+        //{
+        //    base.OnPaint(e);
+        //    Graphics g = e.Graphics;
+        //    g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        //    Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight); // pełna szerokość tła
+
+        //    int absPercent = Math.Abs(percent);
+        //    int currentWidth = (int)(fullRect.Width * (absPercent / 100.0));
+
+        //    if (percent >= 0)
+        //    {
+        //        // 1. Tło szare
+        //        using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
+        //        using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
+        //        {
+        //            g.FillPath(bgBrush, backgroundPath);
+        //        }
+
+        //        // 2. Niebieski pasek
+        //        if (currentWidth > 0)
+        //        {
+        //            using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
+        //            using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+        //            {
+        //                g.FillPath(progressBrush, progressPath);
+        //            }
+        //        }
+        //    }
+        //    else // wartość ujemna
+        //    {
+        //        // 1. Niebieski pełny pasek najpierw
+        //        using (GraphicsPath fullProgressPath = CreateRoundedRectangle(fullRect, radius, 100, false))
+        //        using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+        //        {
+        //            g.FillPath(progressBrush, fullProgressPath);
+        //        }
+
+        //        // 2. Szary "tło/maska" na wierzchu — węższe
+        //        if (currentWidth < fullRect.Width)
+        //        {
+        //            Rectangle maskRect = new Rectangle(
+        //                fullRect.X + currentWidth, // przesunięcie w prawo
+        //                fullRect.Y,
+        //                fullRect.Width - currentWidth,
+        //                fullRect.Height
+        //            );
+
+        //            using (GraphicsPath maskPath = CreateRoundedRectangle(maskRect, radius, 100, true))
+        //            using (SolidBrush maskBrush = new SolidBrush(Color.LightGray))
+        //            {
+        //                g.FillPath(maskBrush, maskPath);
+        //            }
+        //        }
+        //    }
+        //}
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // Parametry prostokąta
             Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight); // pełna szerokość tła
 
-            // 1. Rysowanie tła (stałego)
-            using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true)) // 100% szerokości
-            using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
-            {
-                g.FillPath(bgBrush, backgroundPath);
-            }
+            int absPercent = Math.Abs(percent);
+            int currentWidth = (int)(fullRect.Width * (absPercent / 100.0));
 
-            // 2. Rysowanie dynamicznego paska (progressu)
-            int currentWidth = (int)(fullRect.Width * (percent / 100.0));
-            if (currentWidth > 0)
+            if (percent >= 0)
             {
-                Rectangle progressRect = new Rectangle(fullRect.X, fullRect.Y, currentWidth, fullRect.Height);
-
-                using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
-                using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+                using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
+                using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
                 {
-                    g.FillPath(progressBrush, progressPath);
+                    g.FillPath(bgBrush, backgroundPath);
+                }
+
+                if (currentWidth > 0)
+                {
+                    using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
+                    using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+                    {
+                        g.FillPath(progressBrush, progressPath);
+                    }
                 }
             }
+            else
+            {
+                using (GraphicsPath fullProgressPath = CreateRoundedRectangle(fullRect, radius, 100, false))
+                using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
+                {
+                    g.FillPath(progressBrush, fullProgressPath);
+                }
+
+                if (currentWidth < fullRect.Width)
+                {
+                    Rectangle maskRect = new Rectangle(
+                        fullRect.X + currentWidth,
+                        fullRect.Y,
+                        fullRect.Width - currentWidth,
+                        fullRect.Height
+                    );
+
+                    using (GraphicsPath maskPath = CreateRoundedRectangle(maskRect, radius, 100, true))
+                    using (SolidBrush maskBrush = new SolidBrush(Color.LightGray))
+                    {
+                        g.FillPath(maskBrush, maskPath);
+                    }
+                }
+            }
+
+            string percentText = $"{percent}%";
+            using (StringFormat sf = new StringFormat()
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center
+            })
+            using (Brush textBrush = new SolidBrush(Color.Black))
+            {
+                g.DrawString(percentText, this.Font, textBrush, fullRect, sf);
+            }
         }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            editBox = new TextBox
+            {
+                Visible = false,
+                BorderStyle = BorderStyle.None,
+                Font = this.Font,
+                TextAlign = HorizontalAlignment.Center
+            };
+
+            editBox.Leave += (s, ev) => FinishEdit();
+            editBox.KeyDown += (s, ev) =>
+            {
+                if (ev.KeyCode == Keys.Enter)
+                {
+                    FinishEdit();
+                }
+                else if (ev.KeyCode == Keys.Escape)
+                {
+                    CancelEdit();
+                }
+            };
+
+            this.Controls.Add(editBox);
+
+            this.MouseClick += Form1_MouseClick;
+        }
+
+        private void Form1_MouseClick(object sender, MouseEventArgs e)
+        {
+            Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight);
+            if (fullRect.Contains(e.Location) && !editing)
+            {
+                ShowEditBox(fullRect);
+            }
+        }
+
+        private void ShowEditBox(Rectangle rect)
+        {
+            editBox.Bounds = new Rectangle(
+                rect.X + rect.Width / 2 - 30,
+                rect.Y + rect.Height / 2 - 10,
+                60, 20
+            );
+            editBox.Text = percent.ToString();
+            editBox.Visible = true;
+            editBox.Focus();
+            editing = true;
+        }
+
+        private void FinishEdit()
+        {
+            if (int.TryParse(editBox.Text, out int newValue))
+            {
+                percent = Math.Max(-100, Math.Min(100, newValue));
+                trackBarPercent.Value = percent;
+                labelPercent.Text = $"Percent: {percent}%";
+            }
+
+            editBox.Visible = false;
+            editing = false;
+            Invalidate();
+        }
+
+        private void CancelEdit()
+        {
+            editBox.Visible = false;
+            editing = false;
+            Invalidate();
+        }
+
+
 
 
         private GraphicsPath CreateRoundedRectangle(Rectangle rect, int radius, int percent, bool background)
@@ -243,7 +413,6 @@ namespace progressBar
             float dynamicArcWidth = 4f + (maxArcWidth - 4f) * easedWidth;
             float dynamicArcHeight = 4f + (rect.Height - 4f) * easedHeight;
 
-            // Wyśrodkowanie łuku w pionie
             float offsetY = rect.Y + (rect.Height - dynamicArcHeight) / 2f;
 
             path.AddArc(
