@@ -8,94 +8,23 @@ namespace progressBar
     public partial class Form1 : Form
     {
         private int percent = 97;
-        private int radius = 25;
         private int rectHeight = 50;
         private int distanceToRight = 0;
         private int distanceToLeft = 0;
 
-        private TrackBar trackBarPercent;
-        private TrackBar trackBarRadius;
-        private Label labelPercent;
-        private Label labelRadius;
-        private Label labelHorizontalRadiusRight;
-        private Label labelVerticalRadiusRight;
-        private Label labelDistanceToRight;
-        private Label labelHorizontalRadiusLeft;
-        private Label labelVerticalRadiusLeft;
-        private Label labelDistanceToLeft;
 
         private TextBox editBox;
         private bool editing = false;
 
 
+        // Kolor paska
+        Color barColor = Color.SteelBlue;
+
+
         public Form1()
         {
             InitializeComponent();
-            this.DoubleBuffered = true;
-
-
-            InitializeControls();
-        }
-
-        private void InitializeControls()
-        {
-
-            Label labelHeight = new Label
-            {
-                Text = $"Height: {rectHeight}",
-                Location = new Point(320, 90),
-                AutoSize = true
-            };
-            TrackBar trackBarHeight = new TrackBar
-            {
-                Minimum = 10,
-                Maximum = 300,
-                Value = rectHeight,
-                TickFrequency = 10,
-                Location = new Point(10, 90),
-                Width = 300
-            };
-            trackBarHeight.Scroll += (s, e) =>
-            {
-                rectHeight = trackBarHeight.Value;
-                labelHeight.Text = $"Height: {rectHeight}";
-                Invalidate();
-            };
-
-
-
-            Controls.Add(trackBarHeight);
-            Controls.Add(labelHeight);
-
-
-            trackBarPercent = new TrackBar
-            {
-                Minimum = -100,
-                Maximum = 200,
-                Value = percent,
-                TickFrequency = 5,
-                Location = new Point(10, 10),
-                Width = 300
-            };
-            trackBarPercent.Scroll += TrackBarPercent_Scroll;
-
-            labelPercent = new Label
-            {
-                Text = $"Percent: {percent}%",
-                Location = new Point(320, 10),
-                AutoSize = true
-            };
-
-            Controls.Add(trackBarPercent);
-            Controls.Add(labelPercent);
-            Controls.Add(labelRadius);
-        }
-
-        private void TrackBarPercent_Scroll(object sender, EventArgs e)
-        {
-            percent = trackBarPercent.Value;
-            labelPercent.Text = $"Percent: {percent}%";
-            Invalidate();
+            //this.DoubleBuffered = true;
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -105,38 +34,24 @@ namespace progressBar
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight);
-            int currentWidth = (int)(fullRect.Width * (Math.Abs(percent) / 100.0));
-            if (currentWidth >= fullRect.Width)
-            {
-                currentWidth = fullRect.Width;
-            }
+            int maxWidth = fullRect.Width;
+            int currentWidth = (int)(maxWidth * (Math.Abs(percent) / 100.0));
+            currentWidth = Math.Min(currentWidth, maxWidth);
 
-
-
-            // Kolor paska
-            Color barColor = Color.SteelBlue;
-
-            // 1. Niebieski pasek POD spodem (tylko dla wartości ujemnych)
+            // === 1. Pasek ujemny POD spodem (niezaokrąglony) ===
             if (percent < 0)
             {
-                int rectWidth = 2 * radius;
-                int barHeight = rectHeight - 2; // odejmij 2 px
-                int yOffset = fullRect.Y + 1;   // przesuń o 1 px w dół
-                Rectangle negativeRect = new Rectangle(fullRect.X, yOffset, rectWidth, barHeight);
-
-                using (SolidBrush progressBrush = new SolidBrush(barColor))
-                {
-                    g.FillRectangle(progressBrush, negativeRect);
-                }
+                DrawNegativeBar(g, fullRect);
             }
 
-            // 2. Tło (zaokrąglone – zawsze na wierzchu)
+            // === 2. Tło (zaokrąglone, zawsze na wierzchu) ===
             using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, 100, true))
             using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
             {
                 g.FillPath(bgBrush, backgroundPath);
             }
 
+            // === 3. Pasek dodatni (zaokrąglenie po prawej jeśli <= 100%) ===
             if (percent >= 0 && currentWidth > 0)
             {
                 bool roundRight = percent <= 100;
@@ -147,43 +62,50 @@ namespace progressBar
                 }
             }
 
-            else if (percent > 100)
+            // === 4. Tekst ===
+            DrawCenteredText(g, fullRect, currentWidth);
+        }
+
+        private void DrawNegativeBar(Graphics g, Rectangle fullRect)
+        {
+            int rectWidth = fullRect.Height;
+            int barHeight = rectHeight - 2;
+            int yOffset = fullRect.Y + 1;
+            Rectangle negativeRect = new Rectangle(fullRect.X, yOffset, rectWidth, barHeight);
+
+            using (SolidBrush brush = new SolidBrush(barColor))
             {
-                using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, percent, false, false))
-                using (SolidBrush progressBrush = new SolidBrush(barColor))
-                {
-                    g.FillPath(progressBrush, progressPath);
-                }
+                g.FillRectangle(brush, negativeRect);
+            }
+        }
+
+        private void DrawCenteredText(Graphics g, Rectangle fullRect, int currentWidth)
+        {
+            string text = $"{percent}%";
+            RectangleF textRect;
+            Color textColor;
+
+            if (percent >= 0 && currentWidth >= rectHeight / 2)
+            {
+                textRect = new RectangleF(fullRect.X, fullRect.Y, currentWidth, fullRect.Height);
+                textColor = Color.LightGray;
+            }
+            else
+            {
+                textRect = fullRect;
+                textColor = barColor;
             }
 
-            string percentText = $"{percent}%";
-            using (StringFormat sf = new StringFormat()
+            using (StringFormat sf = new StringFormat
             {
                 Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             })
+            using (Brush textBrush = new SolidBrush(textColor))
             {
-                RectangleF textRect;
-                Color textColor;
-
-                if (percent >= 0 && currentWidth >= rectHeight / 2)
-                {
-                    textRect = new RectangleF(fullRect.X, fullRect.Y, currentWidth, fullRect.Height);
-                    textColor = Color.LightGray;
-                }
-                else
-                {
-                    textRect = fullRect;
-                    textColor = barColor;
-                }
-
-                using (Brush textBrush = new SolidBrush(textColor))
-                {
-                    g.DrawString(percentText, this.Font, textBrush, textRect, sf);
-                }
+                g.DrawString(text, this.Font, textBrush, textRect, sf);
             }
         }
-
 
 
 
@@ -244,8 +166,6 @@ namespace progressBar
             if (int.TryParse(editBox.Text, out int newValue))
             {
                 percent = Math.Max(-100, Math.Min(200, newValue));
-                trackBarPercent.Value = percent;
-                labelPercent.Text = $"Percent: {percent}%";
             }
 
             editBox.Visible = false;
