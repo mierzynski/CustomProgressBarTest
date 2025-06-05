@@ -71,25 +71,13 @@ namespace progressBar
             trackBarPercent = new TrackBar
             {
                 Minimum = -100,
-                Maximum = 100,
+                Maximum = 200,
                 Value = percent,
                 TickFrequency = 5,
                 Location = new Point(10, 10),
                 Width = 300
             };
             trackBarPercent.Scroll += TrackBarPercent_Scroll;
-
-
-            trackBarRadius = new TrackBar
-            {
-                Minimum = 5,
-                Maximum = 100,
-                Value = radius,
-                TickFrequency = 5,
-                Location = new Point(10, 50),
-                Width = 300
-            };
-            trackBarRadius.Scroll += TrackBarRadius_Scroll;
 
             labelPercent = new Label
             {
@@ -98,65 +86,9 @@ namespace progressBar
                 AutoSize = true
             };
 
-            labelRadius = new Label
-            {
-                Text = $"Radius: {radius}",
-                Location = new Point(320, 50),
-                AutoSize = true
-            };
-
-            labelHorizontalRadiusRight = new Label
-            {
-                Text = $"(right) Horizontal Radius: -",
-                Location = new Point(400, 160),
-                AutoSize = true
-            };
-
-            labelVerticalRadiusRight = new Label
-            {
-                Text = $"(right) Vertical Radius: -",
-                Location = new Point(400, 180),
-                AutoSize = true
-            };
-
-            labelDistanceToRight = new Label
-            {
-                Text = $"distanceToRight: {distanceToRight}",
-                Location = new Point(400, 200),
-                AutoSize = true
-            };
-
-            labelHorizontalRadiusLeft = new Label
-            {
-                Text = $"(left) Horizontal Radius: -",
-                Location = new Point(50, 220),
-                AutoSize = true
-            };
-
-            labelVerticalRadiusLeft = new Label
-            {
-                Text = $"(left) Vertical Radius: -",
-                Location = new Point(50, 240),
-                AutoSize = true
-            };
-
-            labelDistanceToLeft = new Label
-            {
-                Text = $"distanceToLeft: {distanceToLeft}",
-                Location = new Point(50, 260),
-                AutoSize = true
-            };
-
             Controls.Add(trackBarPercent);
-            Controls.Add(trackBarRadius);
             Controls.Add(labelPercent);
             Controls.Add(labelRadius);
-            Controls.Add(labelHorizontalRadiusRight);
-            Controls.Add(labelVerticalRadiusRight);
-            Controls.Add(labelDistanceToRight);
-            Controls.Add(labelHorizontalRadiusLeft);
-            Controls.Add(labelVerticalRadiusLeft); 
-            Controls.Add(labelDistanceToLeft);
         }
 
         private void TrackBarPercent_Scroll(object sender, EventArgs e)
@@ -166,71 +98,6 @@ namespace progressBar
             Invalidate();
         }
 
-        // Obsługuje zmianę wartości trackbara dla radius
-        private void TrackBarRadius_Scroll(object sender, EventArgs e)
-        {
-            radius = trackBarRadius.Value;
-            labelRadius.Text = $"Radius: {radius}";
-            Invalidate();
-        }
-        //protected override void OnPaint(PaintEventArgs e)
-        //{
-        //    base.OnPaint(e);
-        //    Graphics g = e.Graphics;
-        //    g.SmoothingMode = SmoothingMode.AntiAlias;
-
-        //    Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight); // pełna szerokość tła
-
-        //    int absPercent = Math.Abs(percent);
-        //    int currentWidth = (int)(fullRect.Width * (absPercent / 100.0));
-
-        //    if (percent >= 0)
-        //    {
-        //        // 1. Tło szare
-        //        using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
-        //        using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
-        //        {
-        //            g.FillPath(bgBrush, backgroundPath);
-        //        }
-
-        //        // 2. Niebieski pasek
-        //        if (currentWidth > 0)
-        //        {
-        //            using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
-        //            using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
-        //            {
-        //                g.FillPath(progressBrush, progressPath);
-        //            }
-        //        }
-        //    }
-        //    else // wartość ujemna
-        //    {
-        //        // 1. Niebieski pełny pasek najpierw
-        //        using (GraphicsPath fullProgressPath = CreateRoundedRectangle(fullRect, radius, 100, false))
-        //        using (SolidBrush progressBrush = new SolidBrush(Color.SteelBlue))
-        //        {
-        //            g.FillPath(progressBrush, fullProgressPath);
-        //        }
-
-        //        // 2. Szary "tło/maska" na wierzchu — węższe
-        //        if (currentWidth < fullRect.Width)
-        //        {
-        //            Rectangle maskRect = new Rectangle(
-        //                fullRect.X + currentWidth, // przesunięcie w prawo
-        //                fullRect.Y,
-        //                fullRect.Width - currentWidth,
-        //                fullRect.Height
-        //            );
-
-        //            using (GraphicsPath maskPath = CreateRoundedRectangle(maskRect, radius, 100, true))
-        //            using (SolidBrush maskBrush = new SolidBrush(Color.LightGray))
-        //            {
-        //                g.FillPath(maskBrush, maskPath);
-        //            }
-        //        }
-        //    }
-        //}
-
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -238,70 +105,86 @@ namespace progressBar
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight);
+            int currentWidth = (int)(fullRect.Width * (Math.Abs(percent) / 100.0));
+            if (currentWidth >= fullRect.Width)
+            {
+                currentWidth = fullRect.Width;
+            }
 
-            int absPercent = Math.Abs(percent);
-            int currentWidth = (int)(fullRect.Width * (absPercent / 100.0));
 
-            // Ustal kolor progressbara w zależności od wartości
-            Color barColor = percent >= 0 ? Color.SteelBlue : ColorTranslator.FromHtml("#B44646");
 
-            // 1. Tło
-            using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, radius, 100, true))
+            // Kolor paska
+            Color barColor = Color.SteelBlue;
+
+            // 1. Niebieski pasek POD spodem (tylko dla wartości ujemnych)
+            if (percent < 0)
+            {
+                int rectWidth = 2 * radius;
+                int barHeight = rectHeight - 2; // odejmij 2 px
+                int yOffset = fullRect.Y + 1;   // przesuń o 1 px w dół
+                Rectangle negativeRect = new Rectangle(fullRect.X, yOffset, rectWidth, barHeight);
+
+                using (SolidBrush progressBrush = new SolidBrush(barColor))
+                {
+                    g.FillRectangle(progressBrush, negativeRect);
+                }
+            }
+
+            // 2. Tło (zaokrąglone – zawsze na wierzchu)
+            using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, 100, true))
             using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
             {
                 g.FillPath(bgBrush, backgroundPath);
             }
 
-            // 2. Pasek postępu
-            if (percent >= 0)
+            if (percent >= 0 && currentWidth > 0)
             {
-                if (currentWidth > 0)
-                {
-                    using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, radius, percent, false))
-                    using (SolidBrush progressBrush = new SolidBrush(barColor))
-                    {
-                        g.FillPath(progressBrush, progressPath);
-                    }
-                }
-            }
-            else
-            {
-                using (GraphicsPath fullProgressPath = CreateRoundedRectangle(fullRect, radius, 100, false))
+                bool roundRight = percent <= 100;
+                using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, percent, false, roundRight))
                 using (SolidBrush progressBrush = new SolidBrush(barColor))
                 {
-                    g.FillPath(progressBrush, fullProgressPath);
-                }
-
-                if (currentWidth < fullRect.Width)
-                {
-                    Rectangle maskRect = new Rectangle(
-                        fullRect.X + currentWidth,
-                        fullRect.Y,
-                        fullRect.Width - currentWidth,
-                        fullRect.Height
-                    );
-
-                    using (GraphicsPath maskPath = CreateRoundedRectangle(maskRect, radius, 100, true))
-                    using (SolidBrush maskBrush = new SolidBrush(Color.LightGray))
-                    {
-                        g.FillPath(maskBrush, maskPath);
-                    }
+                    g.FillPath(progressBrush, progressPath);
                 }
             }
 
-            // 3. Tekst na środku progressbara
-            string percentText = $"{percent}%";
+            else if (percent > 100)
+            {
+                using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, percent, false, false))
+                using (SolidBrush progressBrush = new SolidBrush(barColor))
+                {
+                    g.FillPath(progressBrush, progressPath);
+                }
+            }
 
+            string percentText = $"{percent}%";
             using (StringFormat sf = new StringFormat()
             {
                 Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             })
-            using (Brush textBrush = new SolidBrush(barColor)) // kolor tekstu = kolor progressbara
             {
-                g.DrawString(percentText, this.Font, textBrush, fullRect, sf);
+                RectangleF textRect;
+                Color textColor;
+
+                if (percent >= 0 && currentWidth >= rectHeight / 2)
+                {
+                    textRect = new RectangleF(fullRect.X, fullRect.Y, currentWidth, fullRect.Height);
+                    textColor = Color.LightGray;
+                }
+                else
+                {
+                    textRect = fullRect;
+                    textColor = barColor;
+                }
+
+                using (Brush textBrush = new SolidBrush(textColor))
+                {
+                    g.DrawString(percentText, this.Font, textBrush, textRect, sf);
+                }
             }
         }
+
+
 
 
 
@@ -360,7 +243,7 @@ namespace progressBar
         {
             if (int.TryParse(editBox.Text, out int newValue))
             {
-                percent = Math.Max(-100, Math.Min(100, newValue));
+                percent = Math.Max(-100, Math.Min(200, newValue));
                 trackBarPercent.Value = percent;
                 labelPercent.Text = $"Percent: {percent}%";
             }
@@ -380,12 +263,22 @@ namespace progressBar
 
 
 
-        private GraphicsPath CreateRoundedRectangle(Rectangle rect, int radius, int percent, bool background)
+        private GraphicsPath CreateRoundedRectangle(Rectangle rect, int percent, bool background, bool roundRightSide = true)
+
         {
             GraphicsPath path = new GraphicsPath();
+            int newWidth = 0;
+            int radius = rect.Height / 2;
 
-            int newWidth = (int)(rect.Width * (percent / 100.0));
-            if (newWidth < 1) newWidth = 1;
+            if (roundRightSide)
+            {
+                newWidth = (int)(rect.Width * (percent / 100.0));
+                if (newWidth < 1) newWidth = 1;
+            }
+            else
+            {
+                newWidth = rect.Width;
+            }
 
             Rectangle newRect = new Rectangle(rect.X, rect.Y, newWidth, rect.Height);
             distanceToRight = rect.Right - newRect.Right;
@@ -398,9 +291,16 @@ namespace progressBar
             if (newRect.Width > radius)
             {
                 path.AddLine(newRect.X + radius, newRect.Y, newRect.Right - radius * 2, newRect.Y);
-                AddTopRightArc(path, newRect, radius, background);
-                path.AddLine(newRect.Right, newRect.Y + radius, newRect.Right, newRect.Bottom - radius * 2);
-                AddBottomRightArc(path, newRect, radius, background);
+                if (roundRightSide)
+                {
+                    AddTopRightArc(path, newRect, radius, background);
+                    path.AddLine(newRect.Right, newRect.Y + radius, newRect.Right, newRect.Bottom - radius * 2);
+                    AddBottomRightArc(path, newRect, radius, background);
+                }
+                else
+                {
+                    path.AddLine(newRect.Right, newRect.Y, newRect.Right, newRect.Bottom);
+                }
                 AddBottomLine(path, newRect, radius, background);
             }
 
