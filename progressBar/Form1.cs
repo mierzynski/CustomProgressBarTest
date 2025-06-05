@@ -13,7 +13,7 @@ namespace progressBar
         private int distanceToLeft = 0;
 
 
-        private TextBox editBox;
+        private NumericUpDown editBox;
         private bool editing = false;
 
 
@@ -38,33 +38,36 @@ namespace progressBar
             int currentWidth = (int)(maxWidth * (Math.Abs(percent) / 100.0));
             currentWidth = Math.Min(currentWidth, maxWidth);
 
-            // === 1. Pasek ujemny POD spodem (niezaokrąglony) ===
             if (percent < 0)
-            {
                 DrawNegativeBar(g, fullRect);
-            }
 
-            // === 2. Tło (zaokrąglone, zawsze na wierzchu) ===
-            using (GraphicsPath backgroundPath = CreateRoundedRectangle(fullRect, 100, true))
+            DrawBackgroundBar(g, fullRect);
+
+            if (percent >= 0 && currentWidth > 0)
+                DrawPositiveBar(g, fullRect, percent);
+
+            DrawCenteredText(g, fullRect, currentWidth);
+        }
+        private void DrawBackgroundBar(Graphics g, Rectangle rect)
+        {
+            using (GraphicsPath backgroundPath = CreateRoundedRectangle(rect, 100, true))
             using (SolidBrush bgBrush = new SolidBrush(Color.LightGray))
             {
                 g.FillPath(bgBrush, backgroundPath);
             }
-
-            // === 3. Pasek dodatni (zaokrąglenie po prawej jeśli <= 100%) ===
-            if (percent >= 0 && currentWidth > 0)
-            {
-                bool roundRight = percent <= 100;
-                using (GraphicsPath progressPath = CreateRoundedRectangle(fullRect, percent, false, roundRight))
-                using (SolidBrush progressBrush = new SolidBrush(barColor))
-                {
-                    g.FillPath(progressBrush, progressPath);
-                }
-            }
-
-            // === 4. Tekst ===
-            DrawCenteredText(g, fullRect, currentWidth);
         }
+
+        private void DrawPositiveBar(Graphics g, Rectangle rect, int percent)
+        {
+            bool roundRight = percent <= 100;
+
+            using (GraphicsPath progressPath = CreateRoundedRectangle(rect, percent, false, roundRight))
+            using (SolidBrush progressBrush = new SolidBrush(barColor))
+            {
+                g.FillPath(progressBrush, progressPath);
+            }
+        }
+
 
         private void DrawNegativeBar(Graphics g, Rectangle fullRect)
         {
@@ -113,12 +116,16 @@ namespace progressBar
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            editBox = new TextBox
+            editBox = new NumericUpDown
             {
                 Visible = false,
                 BorderStyle = BorderStyle.None,
                 Font = this.Font,
-                TextAlign = HorizontalAlignment.Center
+                TextAlign = HorizontalAlignment.Center,
+                Minimum = -100,
+                Maximum = 200,
+                DecimalPlaces = 0,
+                Increment = 1
             };
 
             editBox.Leave += (s, ev) => FinishEdit();
@@ -135,14 +142,24 @@ namespace progressBar
             };
 
             this.Controls.Add(editBox);
-
             this.MouseClick += Form1_MouseClick;
         }
+
 
         private void Form1_MouseClick(object sender, MouseEventArgs e)
         {
             Rectangle fullRect = new Rectangle(50, 150, 340, rectHeight);
-            if (fullRect.Contains(e.Location) && !editing)
+
+            if (editing)
+            {
+                if (!editBox.Bounds.Contains(e.Location))
+                {
+                    FinishEdit();
+                }
+                return;
+            }
+
+            if (fullRect.Contains(e.Location))
             {
                 ShowEditBox(fullRect);
             }
@@ -155,23 +172,24 @@ namespace progressBar
                 rect.Y + rect.Height / 2 - 10,
                 60, 20
             );
-            editBox.Text = percent.ToString();
+
+            editBox.Value = percent;
             editBox.Visible = true;
+            editBox.BackColor = Color.LightGray;
+            editBox.ForeColor = barColor;
+
             editBox.Focus();
             editing = true;
         }
 
         private void FinishEdit()
         {
-            if (int.TryParse(editBox.Text, out int newValue))
-            {
-                percent = Math.Max(-100, Math.Min(200, newValue));
-            }
-
+            percent = (int)editBox.Value;
             editBox.Visible = false;
             editing = false;
             Invalidate();
         }
+
 
         private void CancelEdit()
         {
