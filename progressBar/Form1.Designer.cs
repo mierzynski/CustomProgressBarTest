@@ -28,13 +28,33 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.cRoundedProgressBar1 = new progressBar.cRoundedProgressBar();
+            this.SuspendLayout();
+            // 
+            // cRoundedProgressBar1
+            // 
+            this.cRoundedProgressBar1.BarColor = System.Drawing.Color.SteelBlue;
+            this.cRoundedProgressBar1.Location = new System.Drawing.Point(557, 24);
+            this.cRoundedProgressBar1.Name = "cRoundedProgressBar1";
+            this.cRoundedProgressBar1.Percent = 97;
+            this.cRoundedProgressBar1.Size = new System.Drawing.Size(440, 350);
+            this.cRoundedProgressBar1.TabIndex = 0;
+            // 
+            // Form1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1009, 450);
+            this.Controls.Add(this.cRoundedProgressBar1);
+            this.Name = "Form1";
             this.Text = "Form1";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private cRoundedProgressBar cRoundedProgressBar1;
     }
 }
 
